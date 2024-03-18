@@ -5,13 +5,6 @@ resource "tls_private_key" "rsa-4096-example" {
   rsa_bits  = 4096
 }
 
-
-#resource "aws_key_pair" "generated_key" {
-#  key_name   = var.key_name
-#  public_key = tls_private_key.rsa-4096-example.public_key_openssh
-#}
-
-
 #Creación de VM IPIDevops en Azure
 
 resource "azurerm_linux_virtual_machine" "VMIPYDevops" {

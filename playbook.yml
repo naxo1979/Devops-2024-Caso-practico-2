@@ -1,0 +1,97 @@
+---
+- name: deploy httpd container
+  hosts: all
+  become: true
+  gather_facts: false
+#  vars:
+#    webroot: "/webroot"
+#    login_acr: az login --service-principal -u {{ ignacio.palacio025@comunidadunir.net }} -pp {{acioE2AFPala_ }} --tenant {{ 899789dc-202f-44b4-8472-a6d40f9eb440 }}
+#    password_acr: az acr credential show --name UnirContainerIPY --query passwords[0].value
+#  vars_file:
+#    - /etc/containers/auth.json
+
+  tasks:
+
+    - name: Actualizar índice de paquetes
+      apt:
+        update_cache: yes
+
+    - name: podman installed
+      ansible.builtin.apt:
+        name: podman
+        state: present
+        
+        
+#    - name: agregar repo 
+#      ansible.builtin.apt_repository:
+#        repo: deb https://ppa.launchpadcontent.net/ansible/ansible/ubuntu/pool/main/a/ansible-core/ ansible ansible
+#        state: present
+         
+#    - name: Update apt-get repo and cache
+#      apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+#      
+#    - name: ansible-core installed
+#      ansible.builtin.apt:
+#        name: ansible
+#        state: present
+
+#    - name: ansible-core installed
+#      ansible.builtin.command:
+#        cmd:  
+#          - sudo apt update
+#          - sudo apt install software-properties-common
+#          - sudo add-apt-repository --yes --update ppa:ansible/ansible
+#          - sudo apt install ansible
+#      become: true
+ 
+
+
+    - name: pull image
+      containers.podman.podman_image:
+        name: docker.io/httpd
+        pull: true
+
+    - name: Gather info on a specific image
+      containers.podman.podman_image_info:
+        name: docker.io/httpd
+
+# https://docs.ansible.com/ansible/latest/collections/azure/azcollection/index.html
+
+#    - name: Login ACR
+#      azure.azcollection.azure_rm_adpassword:
+#        client_id: ignacio.palacio025@comunidadunir.net
+#        secret : acioE2AFPala_
+#        tenant : 899789dc-202f-44b4-8472-a6d40f9eb440
+        
+    - name: Autenticar contra ACR
+      containers.podman.podman_login:
+#       authfile: /etc/containers/auth.json
+        registry: "unircontaineripy.azurecr.io"
+        username : "UnirContainerIPY"
+        password: "cwmAdxRKvVTB+LdZy6hy5bcPwHI1JUnpTS1iBAQIVx+ACRAvV1x/"
+
+    - name: Push image ACR
+      containers.podman.podman_image:
+       name: httpd
+       push: true
+       auth_file: /etc/containers/auth.json
+       
+#       username : UnirContainerIPY
+#       password: cwmAdxRKvVTB+LdZy6hy5bcPwHI1JUnpTS1iBAQIVx+ACRAvV1x/
+#       push_args:
+#        dest: "unircontaineripy.azurecr.io"
+
+    - name: Tag image
+      containers.podman.podman_tag:
+        image: docker.io/httpd
+        target_names:
+          - casopractico2
+
+
+    - name: Levantar contenedor httpd con podman
+      containers.podman.podman_container:
+       name: httpd
+       image: "unircontaineripy.azurecr.io/httpd"
+       state: started
+       ports: "8080:80"
+       
